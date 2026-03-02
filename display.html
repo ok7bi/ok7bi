@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>شاشة العرض (V3)</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">📺</div>
+      <div>
+        <h1 class="h1">شاشة العرض (V3)</h1>
+        <div class="p">هنا يظهر السؤال + الخيارات للجمهور — الفرق تجاوب من A/B/C/D فقط.</div>
+      </div>
+    </div>
+    <span class="badge" id="live">انتظار</span>
+  </div>
+
+  <div class="card" data-fb-error style="display:none">
+    <h2>⚠️ Firebase غير مضبوط</h2>
+    <p class="bigNote">المشرف لازم يضبط <span class="kbd">firebase-config.js</span> ويرفع الملفات.</p>
+  </div>
+
+  <div class="grid">
+    <div class="card" style="grid-column: span 12;">
+      <div class="row" style="justify-content:space-between">
+        <span class="badge green" id="match">—</span>
+        <span class="badge" id="qNum">سؤال — / 10</span>
+      </div>
+    </div>
+
+    <div class="card center" style="grid-column: span 4;">
+      <div class="small">الوقت المتبقي</div>
+      <div class="timer" id="timer">—</div>
+    </div>
+
+    <div class="card" style="grid-column: span 8;">
+      <div class="question" id="qText">انتظار بدء المباراة…</div>
+      <div class="answers" id="answers"></div>
+      <div class="small">ملاحظة: الفرق تشوف فقط A/B/C/D (الحروف). الخيارات هنا للجمهور.</div>
+    </div>
+
+    <div class="card" style="grid-column: span 12;">
+      <h2>الترتيب</h2>
+      <div class="grid">
+        <div class="card" style="grid-column: span 6;"><h2>المجموعة A</h2><div id="groupA"></div></div>
+        <div class="card" style="grid-column: span 6;"><h2>المجموعة B</h2><div id="groupB"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">شاشة العرض — ليالي رمضان الثقافية</div>
+</div>
+
+<script>
+(function(){
+  if(!initFirebaseOrShowError()) return;
+
+  const PATH="contest_v1";
+  const teamsRef=ref(PATH+"/teams");
+  const matchesRef=ref(PATH+"/matches");
+  const stateRef=ref(PATH+"/state");
+
+  let teams={}, matches={}, state={};
+
+  function title(){
+    if(!state.matchId) return "—";
+    const m=matches[state.matchId];
+    if(!m) return state.matchId;
+    return `${teams[m.teamA]?.name||m.teamA} ضد ${teams[m.teamB]?.name||m.teamB} (مجموعة ${m.group})`;
+  }
+
+  function renderStandings(){
+    const group=(g)=>Object.values(teams).filter(t=>t.group===g).sort((a,b)=>(b.points||0)-(a.points||0));
+    const render=(list)=>{
+      let h=`<table class="table"><thead><tr><th>الفريق</th><th>نقاط</th><th>لعب</th></tr></thead><tbody>`;
+      list.forEach(t=> h+=`<tr><td>${t.name}</td><td><b>${t.points||0}</b></td><td>${t.played||0}</td></tr>`);
+      h+=`</tbody></table>`; return h;
+    };
+    el("groupA").innerHTML=render(group("A"));
+    el("groupB").innerHTML=render(group("B"));
+  }
+
+  function render(){
+    setBadge("live", state.phase==="live"?"مباشر 🔴":"انتظار", state.phase==="live"?"red":"");
+    el("match").textContent=title();
+    el("qNum").textContent = state.qIndex>=0 ? `سؤال ${state.qIndex+1} / ${MATCH_Q_COUNT}` : `سؤال — / ${MATCH_Q_COUNT}`;
+
+    const left = state.timerEnd ? Math.max(0, Math.ceil((state.timerEnd-Date.now())/1000)) : null;
+    el("timer").textContent = left===null ? "—" : left;
+
+    el("qText").textContent = state.question?.text || "انتظار بدء المباراة…";
+    const wrap=el("answers");
+    wrap.innerHTML="";
+    (state.question?.answers||[]).forEach((a,i)=>{
+      const b=document.createElement("button");
+      b.className="answerBtn";
+      b.textContent = `${LETTERS[i]}) ${a}`;
+      wrap.appendChild(b);
+    });
+  }
+
+  teamsRef.on("value", s=>{teams=s.val()||{}; renderStandings(); render();});
+  matchesRef.on("value", s=>{matches=s.val()||{}; render();});
+  stateRef.on("value", s=>{state=s.val()||{}; render();});
+
+  setInterval(()=>{ if(state.phase==="live") render(); }, 250);
+})();
+</script>
+</body>
+</html>
