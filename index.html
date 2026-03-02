@@ -1,17 +1,37 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>مسابقات ليالي رمضان الثقافية</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مسابقة ليالي رمضان الثقافية</title>
+<link rel="stylesheet" href="style.css">
 </head>
+<body>
 
-<body style="text-align:center;font-family:Tahoma">
+<h1>🌙 مسابقة ليالي رمضان الثقافية</h1>
 
-<h1>مسابقات ليالي رمضان الثقافية 🌙</h1>
+<div id="setup">
+<h2>إعداد الفرق</h2>
+<label>عدد الفرق:</label>
+<input type="number" id="teamsCount" value="8">
+<button onclick="createTeams()">إنشاء الفرق</button>
 
-<h2>تم إنشاء النسخة الأولى بنجاح 🔥</h2>
+<div id="teams"></div>
+<button onclick="startTournament()">بدء الدوري</button>
+</div>
 
-<p>الموقع حالياً قيد التطوير…</p>
+<div id="match" style="display:none">
+<h2 id="teamsTitle"></h2>
+<div id="timer">30</div>
 
+<div id="questionBox"></div>
+
+<button onclick="nextQuestion()">السؤال التالي</button>
+
+<h3>النقاط</h3>
+<div id="score"></div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
