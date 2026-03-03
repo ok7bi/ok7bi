@@ -157,16 +157,7 @@ if(m){
     const left = state.timerEnd ? Math.max(0, Math.ceil((state.timerEnd-Date.now())/1000)) : null;
     el("timer").textContent = left===null ? "—" : left;
 
-const qEl = el("qText");
-
-qEl.classList.remove("fade-in");
-qEl.classList.add("fade-out");
-
-setTimeout(()=>{
-  qEl.textContent = state.question?.text || "انتظار بدء المباراة…";
-  qEl.classList.remove("fade-out");
-  qEl.classList.add("fade-in");
-},150);    const wrap=el("answers");
+el("qText").textContent = state.question?.text || "انتظار بدء المباراة…";   const wrap=el("answers");
     wrap.innerHTML="";
     (state.question?.answers||[]).forEach((a,i)=>{
       const b=document.createElement("button");
