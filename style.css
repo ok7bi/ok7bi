@@ -109,3 +109,16 @@ input:focus,select:focus{border-color:#c7d2fe;box-shadow:0 0 0 4px rgba(79,70,22
 .designer-badge:hover svg {
   transform: scale(1.2);
 }
+/* ===== انتقال سينمائي للأسئلة ===== */
+
+.fade-out {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: 0.3s ease;
+}
+
+.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+  transition: 0.3s ease;
+}
