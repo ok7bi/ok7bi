@@ -122,3 +122,30 @@ input:focus,select:focus{border-color:#c7d2fe;box-shadow:0 0 0 4px rgba(79,70,22
   transform: translateY(0);
   transition: 0.3s ease;
 }
+
+/* ===== وضع التلفزيون ===== */
+
+@media (min-width: 1400px){
+
+  .question{
+    font-size: 46px !important;
+  }
+
+  .answerBtn{
+    font-size: 28px !important;
+    padding: 18px;
+  }
+
+  .timer{
+    font-size: 70px !important;
+  }
+
+  .badge{
+    font-size: 22px !important;
+  }
+
+  .table{
+    font-size: 22px !important;
+  }
+
+}
