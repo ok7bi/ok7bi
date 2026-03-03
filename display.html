@@ -124,6 +124,11 @@
   function render(){
     setBadge("live", state.phase==="live"?"مباشر 🔴":"انتظار", state.phase==="live"?"red":"");
     el("match").textContent=title();
+    const m = matches[state.matchId];
+    if(m){
+  el("match").textContent += ` (${m.scoreA||0} - ${m.scoreB||0})`;
+}
+
     el("qNum").textContent = state.qIndex>=0 ? `سؤال ${state.qIndex+1} / ${MATCH_Q_COUNT}` : `سؤال — / ${MATCH_Q_COUNT}`;
 
     const left = state.timerEnd ? Math.max(0, Math.ceil((state.timerEnd-Date.now())/1000)) : null;
@@ -171,15 +176,9 @@
 
   }
 
- matchesRef.on("value", s=>{
+matchesRef.on("value", s=>{
   matches = s.val() || {};
   render();
-
-  const m = matches[state.matchId];
-  if(m){
-    document.getElementById("liveScoreA").textContent = m.scoreA || 0;
-    document.getElementById("liveScoreB").textContent = m.scoreB || 0;
-  }
 });
   // استمع لنتيجة السؤال الحالي (تجي من لوحة المشرف بعد انتهاء الوقت)
   function attachResultListener(){
