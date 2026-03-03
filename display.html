@@ -71,12 +71,19 @@
   const stateRef=ref(PATH+"/state");
   const resultsRef=ref(PATH+"/matchResults");
   const subsRef=ref(PATH+"/submissions");
-subsRef.on("child_added", snap=>{
+subsRef.on("value", snap=>{
+  submittedTeams.clear();
+
   const data = snap.val();
-  if(data?.teamId){
-    submittedTeams.add(data.teamId);
-    render();
-  }
+  if(!data) return;
+
+  Object.values(data).forEach(sub=>{
+    if(sub?.teamId){
+      submittedTeams.add(sub.teamId);
+    }
+  });
+
+  render();
 });
   let teams={}, matches={}, state={};
   let lastSubKeys = new Set(); // لمنع تكرار الصوت
