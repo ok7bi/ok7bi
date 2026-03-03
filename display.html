@@ -114,8 +114,10 @@ subsRef.on("value", snap=>{
       audio.play().catch(()=>{});
     }
   }
+subsRef.on("value", snap=>{
 
-  lastSubKeys = new Set(keys);
+  const data = snap.val();
+  if(!data) return;
 
   submittedTeams.clear();
 
@@ -126,19 +128,8 @@ subsRef.on("value", snap=>{
   });
 
   render();
-});  submittedTeams.clear();
-
-  const data = snap.val();
-  if(!data) return;
-
-  Object.values(data).forEach(sub=>{
-    if(sub?.teamId){
-      submittedTeams.add(sub.teamId);
-    }
-  });
-
-  render();
 });
+
   let teams={}, matches={}, state={};
   let lastSubKeys = new Set(); // لمنع تكرار الصوت
   let currentResult = null;
