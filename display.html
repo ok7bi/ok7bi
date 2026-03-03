@@ -52,9 +52,8 @@
     </div>
 
     <div class="card" style="grid-column: span 12;">
-      <h2>الترتيب</h2>
-      <div class="grid">
-
+<h2>الترتيب</h2>
+<div id="liveStandings"></div>
       </div>
     </div>
   </div>
@@ -131,10 +130,23 @@ function title(){
     setBadge("live", state.phase==="live"?"مباشر 🔴":"انتظار", state.phase==="live"?"red":"");
     el("match").textContent=title();
     const m = matches[state.matchId];
-    if(m){
+if(m){
+  const teamA = teams[m.teamA];
+  const teamB = teams[m.teamB];
+
+  const box = document.getElementById("liveStandings");
+
+  box.innerHTML = `
+    <div style="font-size:24px;margin:12px 0;font-weight:bold">
+      ${teamA?.name || m.teamA} — ${teamA?.points || 0} نقطة
+    </div>
+    <div style="font-size:24px;margin:12px 0;font-weight:bold">
+      ${teamB?.name || m.teamB} — ${teamB?.points || 0} نقطة
+    </div>
+  `;
+
   el("match").textContent += ` (${m.scoreA||0} - ${m.scoreB||0})`;
 }
-
     el("qNum").textContent = state.qIndex>=0 ? `سؤال ${state.qIndex+1} / ${MATCH_Q_COUNT}` : `سؤال — / ${MATCH_Q_COUNT}`;
 
     const left = state.timerEnd ? Math.max(0, Math.ceil((state.timerEnd-Date.now())/1000)) : null;
