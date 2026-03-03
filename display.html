@@ -76,6 +76,10 @@
   let teams={}, matches={}, state={};
   let lastSubKeys = new Set(); // لمنع تكرار الصوت
   let currentResult = null;
+  teamsRef.on("value", s=>{
+  teams = s.val() || {};
+  render();
+});
 
   function ding(){
     try{
