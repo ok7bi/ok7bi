@@ -71,10 +71,17 @@
   const stateRef=ref(PATH+"/state");
   const resultsRef=ref(PATH+"/matchResults");
   const subsRef=ref(PATH+"/submissions");
-
+subsRef.on("child_added", snap=>{
+  const data = snap.val();
+  if(data?.teamId){
+    submittedTeams.add(data.teamId);
+    render();
+  }
+});
   let teams={}, matches={}, state={};
   let lastSubKeys = new Set(); // لمنع تكرار الصوت
   let currentResult = null;
+  let submittedTeams = new Set();
   teamsRef.on("value", s=>{
   teams = s.val() || {};
   render();
@@ -130,6 +137,9 @@ function title(){
     setBadge("live", state.phase==="live"?"مباشر 🔴":"انتظار", state.phase==="live"?"red":"");
     el("match").textContent=title();
     const m = matches[state.matchId];
+    if(state.qIndex < 0){
+  submittedTeams.clear();
+}
 if(m){
   const teamA = teams[m.teamA];
   const teamB = teams[m.teamB];
@@ -137,10 +147,10 @@ if(m){
   const box = document.getElementById("liveStandings");
 
   box.innerHTML = `
-    <div style="font-size:24px;margin:12px 0;font-weight:bold">
+    <div class="${submittedTeams.has(m.teamA) ? 'submitted' : ''}" style="font-size:24px;margin:12px 0;font-weight:bold">
       ${teamA?.name || m.teamA} — ${teamA?.points || 0} نقطة
     </div>
-    <div style="font-size:24px;margin:12px 0;font-weight:bold">
+   <div class="${submittedTeams.has(m.teamB) ? 'submitted' : ''}" style="font-size:24px;margin:12px 0;font-weight:bold">
       ${teamB?.name || m.teamB} — ${teamB?.points || 0} نقطة
     </div>
   `;
