@@ -38,7 +38,11 @@
 
     <div class="card center" style="grid-column: span 4;">
       <div class="small">الوقت المتبقي</div>
-      <div class="timer" id="timer">—</div>
+     <div class="timer" id="timer">—</div>
+      <div style="display:flex; justify-content:space-between; margin-top:15px; font-size:28px; font-weight:bold;">
+  <div id="liveScoreA">0</div>
+  <div id="liveScoreB">0</div>
+</div>
     </div>
     <div class="card" style="grid-column: span 8;">
       <div class="question" id="qText">انتظار بدء المباراة…</div>
@@ -167,9 +171,16 @@
 
   }
 
-  teamsRef.on("value", s=>{teams=s.val()||{}; renderStandings(); render();});
-  matchesRef.on("value", s=>{matches=s.val()||{}; render();});
+ matchesRef.on("value", s=>{
+  matches = s.val() || {};
+  render();
 
+  const m = matches[state.matchId];
+  if(m){
+    document.getElementById("liveScoreA").textContent = m.scoreA || 0;
+    document.getElementById("liveScoreB").textContent = m.scoreB || 0;
+  }
+});
   // استمع لنتيجة السؤال الحالي (تجي من لوحة المشرف بعد انتهاء الوقت)
   function attachResultListener(){
     currentResult = null;
