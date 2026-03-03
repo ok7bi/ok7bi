@@ -74,6 +74,7 @@
 
 
   let teams={}, matches={}, state={};
+  let lastQuestionText = "";
   let lastSubKeys = new Set(); // لمنع تكرار الصوت
   let currentResult = null;
   let submittedTeams = new Set();
@@ -157,7 +158,24 @@ if(m){
     const left = state.timerEnd ? Math.max(0, Math.ceil((state.timerEnd-Date.now())/1000)) : null;
     el("timer").textContent = left===null ? "—" : left;
 
-el("qText").textContent = state.question?.text || "انتظار بدء المباراة…";   const wrap=el("answers");
+const newText = state.question?.text || "انتظار بدء المباراة…";
+const qEl = el("qText");
+
+if(newText !== lastQuestionText){
+
+  qEl.style.opacity = "0";
+
+  setTimeout(()=>{
+    qEl.textContent = newText;
+    qEl.style.transition = "0.3s ease";
+    qEl.style.opacity = "1";
+  },150);
+
+  lastQuestionText = newText;
+
+}else{
+  qEl.textContent = newText;
+}   const wrap=el("answers");
     wrap.innerHTML="";
     (state.question?.answers||[]).forEach((a,i)=>{
       const b=document.createElement("button");
