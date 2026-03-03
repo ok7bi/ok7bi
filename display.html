@@ -103,13 +103,15 @@
   }
 
 
-  function title(){
-    if(!state.matchId) return "—";
-    const m=matches[state.matchId];
-    if(!m) return state.matchId;
-    return `${teams[m.teamA]?.name||m.teamA} ضد ${teams[m.teamB]?.name||m.teamB} (مجموعة ${m.group})`;
-  }
+function title(){
+  const m = matches[state.matchId];
+  if(!m) return "";
 
+  const teamA = teams[m.teamA]?.name || m.teamA;
+  const teamB = teams[m.teamB]?.name || m.teamB;
+
+  return `${teamA} ضد ${teamB}`;
+}
   function renderStandings(){
     const group=(g)=>Object.values(teams).filter(t=>t.group===g).sort((a,b)=>(b.points||0)-(a.points||0));
     const render=(list)=>{
