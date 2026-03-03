@@ -71,64 +71,7 @@
   const stateRef=ref(PATH+"/state");
   const resultsRef=ref(PATH+"/matchResults");
   const subsRef=ref(PATH+"/submissions");
-subsRef.on("value", snap=>{
-  const data = snap.val();
-  if(!data) return;
 
-  const keys = Object.keys(data);
-
-  // إذا فيه إرسال جديد
-  if(keys.length > lastSubKeys.size){
-
-    // 🔔 تشغيل الجرس
-    const audio = document.getElementById("bellSound");
-    if(audio){
-      audio.currentTime = 0;
-      audio.play().catch(()=>{});
-    }
-
-  }
-
-  lastSubKeys = new Set(keys);
-
-  submittedTeams.clear();
-
-  Object.values(data).forEach(sub=>{
-    if(sub?.teamId){
-      submittedTeams.add(sub.teamId);
-    }
-  });
-
-  render();
-});
-  const data = snap.val();
-  if(!data) return;
-
-  const keys = Object.keys(data);
-
-  // إذا فيه إرسال جديد
-  if(keys.length > lastSubKeys.size){
-    const audio = document.getElementById("bellSound");
-    if(audio){
-      audio.currentTime = 0;
-      audio.play().catch(()=>{});
-    }
-  }
-subsRef.on("value", snap=>{
-
-  const data = snap.val();
-  if(!data) return;
-
-  submittedTeams.clear();
-
-  Object.values(data).forEach(sub=>{
-    if(sub?.teamId){
-      submittedTeams.add(sub.teamId);
-    }
-  });
-
-  render();
-});
 
   let teams={}, matches={}, state={};
   let lastSubKeys = new Set(); // لمنع تكرار الصوت
