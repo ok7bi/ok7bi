@@ -1,276 +1,335 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>شاشة العرض (V5)</title>
-  <link rel="stylesheet" href="style.css"/>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="app.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>شاشة العرض</title>
+
+<link rel="stylesheet" href="style.css"/>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
+
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+
 </head>
 <body>
+
 <div class="container">
-  <div class="topbar">
-    <div class="brand">
-      <div class="logo">📺</div>
-      <div>
-        <h1 class="h1">شاشة العرض (V5)</h1>
-        <div class="p">هنا يظهر السؤال + الخيارات للجمهور — الفرق تجاوب من A/B/C/D فقط.</div>
-      </div>
-    </div>
-    <span class="badge" id="live">انتظار</span>
-  </div>
 
-  <div class="card" data-fb-error style="display:none">
-    <h2>⚠️ Firebase غير مضبوط</h2>
-    <p class="bigNote">المشرف لازم يضبط <span class="kbd">firebase-config.js</span> ويرفع الملفات.</p>
-  </div>
+<div class="topbar">
+<div class="brand">
+<div class="logo">📺</div>
 
-  <div class="grid">
-    <div class="card" style="grid-column: span 12;">
-      <div class="row" style="justify-content:space-between">
-        <span class="badge green" id="match">—</span>
-        <span class="badge" id="qNum">سؤال — / 10</span>
-      </div>
-    </div>
-
-    <div class="card center" style="grid-column: span 4;">
-      <div class="small">الوقت المتبقي</div>
-     <div class="timer" id="timer">—</div>
-      <div style="display:flex; justify-content:space-between; margin-top:15px; font-size:28px; font-weight:bold;">
-  <div id="liveScoreA">0</div>
-  <div id="liveScoreB">0</div>
+<div>
+<h1 class="h1">شاشة العرض</h1>
+<div class="p">السؤال والخيارات تظهر للجمهور</div>
 </div>
-    </div>
-    <div class="card" style="grid-column: span 8;">
-      <div class="question" id="qText">انتظار بدء المباراة…</div>
-      <div class="answers" id="answers"></div>
-      <div class="winnerBox" id="winner">النتيجة: —</div>
-      <div class="small">ملاحظة: الفرق تشوف فقط A/B/C/D (الحروف). الخيارات هنا للجمهور.</div>
-    </div>
 
-    <div class="card" style="grid-column: span 12;">
-<h2>الترتيب</h2>
+</div>
+
+<span class="badge" id="live">انتظار</span>
+</div>
+
+<div class="grid">
+
+<div class="card" style="grid-column: span 12;">
+<div class="row" style="justify-content:space-between">
+
+<span class="badge green" id="match">—</span>
+
+<span class="badge" id="qNum">سؤال —</span>
+
+</div>
+</div>
+
+<div class="card center" style="grid-column: span 4;">
+<div class="small">الوقت المتبقي</div>
+<div class="timer" id="timer">—</div>
+</div>
+
+<div class="card" style="grid-column: span 8;">
+
+<div class="question" id="qText">
+انتظار بدء المباراة…
+</div>
+
+<div class="answers" id="answers"></div>
+
+<div class="winnerBox" id="winner">
+النتيجة: —
+</div>
+
+</div>
+
+<div class="card" style="grid-column: span 6;">
+<h2>ترتيب الفرق</h2>
 <div id="liveStandings"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="footer">شاشة العرض — ليالي رمضان الثقافية</div>
 </div>
+
+<div class="card" style="grid-column: span 6;">
+<h2>🏆 الأوائل من الجمهور</h2>
+<div id="audienceTop5" class="audienceMini"></div>
+</div>
+
+</div>
+
+<div class="footer">
+ليالي رمضان الثقافية
+</div>
+
+</div>
+
+<audio id="bell" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_6cfa1c0d36.mp3"></audio>
 
 <script>
+
 (function(){
-  if(!initFirebaseOrShowError()) return;
 
-  const PATH="contest_v1";
-  const teamsRef=ref(PATH+"/teams");
-  const matchesRef=ref(PATH+"/matches");
-  const stateRef=ref(PATH+"/state");
-  const resultsRef=ref(PATH+"/matchResults");
-  const subsRef=ref(PATH+"/submissions");
+if(!initFirebaseOrShowError()) return;
 
+const PATH="contest_v1";
 
-  let teams={}, matches={}, state={};
-  let lastQuestionText = "";
-  let lastSubKeys = new Set(); // لمنع تكرار الصوت
-  let currentResult = null;
-  let submittedTeams = new Set();
-  teamsRef.on("value", s=>{
-  teams = s.val() || {};
-  render();
+const teamsRef=ref(PATH+"/teams");
+const matchesRef=ref(PATH+"/matches");
+const stateRef=ref(PATH+"/state");
+const resultsRef=ref(PATH+"/matchResults");
+const audienceUsersRef=ref(PATH+"/audience/users");
+const subsRef=ref(PATH+"/submissions");
+
+let teams={},matches={},state={};
+
+const bell=document.getElementById("bell");
+
+function playBell(){
+try{
+bell.currentTime=0;
+bell.play();
+}catch(e){}
+}
+
+function renderAudience(){
+
+audienceUsersRef.on("value",snap=>{
+
+if(!snap.exists()) return;
+
+const users=snap.val();
+
+const sorted=Object.keys(users)
+.map(u=>({name:u,score:users[u].score||0}))
+.sort((a,b)=>b.score-a.score)
+.slice(0,5);
+
+let html="";
+
+sorted.forEach((u,i)=>{
+
+html+=`
+<div style="font-size:22px;margin:10px 0;display:flex;justify-content:space-between">
+<span>#${i+1} - ${u.name}</span>
+<span>${u.score}</span>
+</div>
+`;
+
 });
 
-  function ding(){
-    try{
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioContext();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "triangle";
-      o.frequency.setValueAtTime(880, ctx.currentTime);
-      g.gain.setValueAtTime(0.0001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
-      o.connect(g); g.connect(ctx.destination);
-      o.start();
-      o.stop(ctx.currentTime + 0.26);
-      o.onended = ()=>{ try{ctx.close();}catch(e){} };
-    }catch(e){}
-  }
+document.getElementById("audienceTop5").innerHTML=html;
 
-  function clearHighlights(){
-    const wrap=el("answers");
-    if(!wrap) return;
-    [...wrap.querySelectorAll(".answerBtn")].forEach(b=>b.classList.remove("correct"));
-    el("winner").textContent="النتيجة: —";
-  }
+});
 
-
-function title(){
-  const m = matches[state.matchId];
-  if(!m) return "";
-
-  const teamA = teams[m.teamA]?.name || m.teamA;
-  const teamB = teams[m.teamB]?.name || m.teamB;
-
-  return `${teamA} ضد ${teamB}`;
 }
-  function renderStandings(){
-    const group=(g)=>Object.values(teams).filter(t=>t.group===g).sort((a,b)=>(b.points||0)-(a.points||0));
-    const render=(list)=>{
-      let h=`<table class="table"><thead><tr><th>الفريق</th><th>نقاط</th><th>لعب</th></tr></thead><tbody>`;
-      list.forEach(t=> h+=`<tr><td>${t.name}</td><td><b>${t.points||0}</b></td><td>${t.played||0}</td></tr>`);
-      h+=`</tbody></table>`; return h;
-    };
-    el("groupA").innerHTML=render(group("A"));
-    el("groupB").innerHTML=render(group("B"));
-  }
+function renderTeams(){
 
-  function render(){
-    setBadge("live", state.phase==="live"?"مباشر 🔴":"انتظار", state.phase==="live"?"red":"");
-    el("match").textContent=title();
-    const m = matches[state.matchId];
-    if(state.qIndex < 0){
-  submittedTeams.clear();
+const m=matches[state.matchId];
+if(!m) return;
+
+const teamA=teams[m.teamA];
+const teamB=teams[m.teamB];
+
+let html="";
+
+html+=`<div style="font-size:28px;margin:12px 0;font-weight:bold">
+${teamA?.name||m.teamA} — ${teamA?.points||0} نقطة
+</div>`;
+
+html+=`<div style="font-size:28px;margin:12px 0;font-weight:bold">
+${teamB?.name||m.teamB} — ${teamB?.points||0} نقطة
+</div>`;
+
+document.getElementById("liveStandings").innerHTML=html;
+
 }
-if(m){
-  const teamA = teams[m.teamA];
-  const teamB = teams[m.teamB];
 
-  const box = document.getElementById("liveStandings");
+function renderQuestion(){
 
-  box.innerHTML = `
-    <div class="${submittedTeams.has(m.teamA) ? 'submitted' : ''}" style="font-size:24px;margin:12px 0;font-weight:bold">
-      ${teamA?.name || m.teamA} — ${teamA?.points || 0} نقطة
-    </div>
-   <div class="${submittedTeams.has(m.teamB) ? 'submitted' : ''}" style="font-size:24px;margin:12px 0;font-weight:bold">
-      ${teamB?.name || m.teamB} — ${teamB?.points || 0} نقطة
-    </div>
-  `;
+const q=state.question;
+if(!q) return;
 
-  el("match").textContent += ` (${m.scoreA||0} - ${m.scoreB||0})`;
+document.getElementById("qText").textContent=q.text||"";
+
+const wrap=document.getElementById("answers");
+wrap.innerHTML="";
+
+(q.answers||[]).forEach((a,i)=>{
+
+const b=document.createElement("button");
+b.className="answerBtn";
+b.textContent=LETTERS[i]+" ) "+a;
+wrap.appendChild(b);
+
+});
+
+showCorrect();
+
 }
-    el("qNum").textContent = state.qIndex>=0 ? `سؤال ${state.qIndex+1} / ${MATCH_Q_COUNT}` : `سؤال — / ${MATCH_Q_COUNT}`;
 
-    const left = state.timerEnd ? Math.max(0, Math.ceil((state.timerEnd-Date.now())/1000)) : null;
-    el("timer").textContent = left===null ? "—" : left;
+function showCorrect(){
 
-const newText = state.question?.text || "انتظار بدء المباراة…";
-const qEl = el("qText");
+if(!state.matchId) return;
 
-if(newText !== lastQuestionText){
+const qKey=String(state.qIndex);
 
-  qEl.style.opacity = "0";
+resultsRef.child(state.matchId).child(qKey)
+.once("value")
+.then(snap=>{
 
-  setTimeout(()=>{
-    qEl.textContent = newText;
-    qEl.style.transition = "0.3s ease";
-    qEl.style.opacity = "1";
-  },150);
+const r=snap.val();
+if(!r) return;
 
-  lastQuestionText = newText;
+const correct=r.correctIndex;
+
+const btns=document.querySelectorAll(".answerBtn");
+
+btns.forEach(b=>b.classList.remove("correct"));
+
+if(btns[correct]){
+btns[correct].classList.add("correct");
+}
+
+showWinner(r);
+
+});
+
+}
+
+function showWinner(r){
+
+const m=matches[state.matchId];
+if(!m) return;
+
+const teamA=teams[m.teamA];
+const teamB=teams[m.teamB];
+
+const aAward=r.teamA?.award||0;
+const bAward=r.teamB?.award||0;
+
+let text="";
+
+if(aAward===0 && bAward===0){
+
+text=`النتيجة: <span style="color:red;font-weight:bold">لا يوجد إجابة</span>`;
+
+}else if(aAward===2 && bAward===0){
+
+text=`النتيجة: الأسرع <span style="color:green">(+2)</span> = ${teamA?.name||m.teamA}`;
+
+}else if(bAward===2 && aAward===0){
+
+text=`النتيجة: الأسرع <span style="color:green">(+2)</span> = ${teamB?.name||m.teamB}`;
 
 }else{
-  qEl.textContent = newText;
-}   const wrap=el("answers");
-    wrap.innerHTML="";
-    (state.question?.answers||[]).forEach((a,i)=>{
-      const b=document.createElement("button");
-      b.className="answerBtn";
-      b.textContent = `${LETTERS[i]}) ${a}`;
-      wrap.appendChild(b);
-    });
-    // V5: بعد انتهاء الوقت ووجود نتيجة، لوّن الإجابة الصحيحة واعرض أسرع فريق
-    const timeUp = state.timerEnd ? (Date.now() > state.timerEnd) : false;
-    if(timeUp && currentResult && currentResult.correctIndex!=null){
-      const correctBtn = wrap.querySelectorAll(".answerBtn")[currentResult.correctIndex];
-      if(correctBtn) correctBtn.classList.add("correct");
 
-      const mObj = matches[state.matchId];
-      if(mObj){
-        const aAward = currentResult.teamA?.award || 0;
-        const bAward = currentResult.teamB?.award || 0;
-        let fastest = "—";
-        if(aAward===2) fastest = teams[mObj.teamA]?.name || mObj.teamA;
-        if(bAward===2) fastest = teams[mObj.teamB]?.name || mObj.teamB;
+let fastest=aAward===2?(teamA?.name||m.teamA):(teamB?.name||m.teamB);
+let second=aAward===1?(teamA?.name||m.teamA):(teamB?.name||m.teamB);
 
-        if(aAward===0 && bAward===0){
-          el("winner").innerHTML = "النتيجة: <b>لا أحد أجاب صحيح</b>";
-        }else if(aAward===2 && bAward===0){
-          el("winner").innerHTML = `الأسرع: <b>${fastest}</b> (+2)`;
-        }else if(bAward===2 && aAward===0){
-          el("winner").innerHTML = `الأسرع: <b>${fastest}</b> (+2)`;
-        }else{
-          // الاثنين صحيح
-          const other = (fastest=== (teams[mObj.teamA]?.name||mObj.teamA)) ? (teams[mObj.teamB]?.name||mObj.teamB) : (teams[mObj.teamA]?.name||mObj.teamA);
-          el("winner").innerHTML = `الأسرع: <b>${fastest}</b> (+2) • الآخر: <b>${other}</b> (+1)`;
-        }
-      }
-    }else{
-      // قبل انتهاء الوقت/أو ما فيه نتيجة
-      el("winner").textContent = "النتيجة: —";
-    }
+text=`النتيجة: الأسرع <span style="color:green">(+2)</span> = ${fastest} • <span style="color:green">(+1)</span> = ${second}`;
 
-  }
+}
 
-matchesRef.on("value", s=>{
-  matches = s.val() || {};
-  render();
+document.getElementById("winner").innerHTML=text;
+
+}
+
+function renderTimer(){
+
+if(!state.timerEnd){
+document.getElementById("timer").textContent="—";
+return;
+}
+
+const left=Math.max(0,
+Math.ceil((state.timerEnd-Date.now())/1000)
+);
+
+document.getElementById("timer").textContent=left;
+
+}
+
+function renderMatch(){
+
+const m=matches[state.matchId];
+if(!m) return;
+
+const teamA=teams[m.teamA]?.name||m.teamA;
+const teamB=teams[m.teamB]?.name||m.teamB;
+
+document.getElementById("match").textContent=
+teamA+" ضد "+teamB;
+
+}
+
+function listenBell(){
+
+if(!state.matchId) return;
+if(state.qIndex==null) return;
+
+const qKey=String(state.qIndex);
+
+subsRef.child(state.matchId).child(qKey)
+.on("child_added",snap=>{
+
+playBell();
+
 });
-  // استمع لنتيجة السؤال الحالي (تجي من لوحة المشرف بعد انتهاء الوقت)
-  function attachResultListener(){
-    currentResult = null;
-    if(!state.matchId || state.qIndex==null || state.qIndex<0) { render(); return; }
-    const qKey = String(state.qIndex);
-    resultsRef.child(state.matchId).child(qKey).off();
-    resultsRef.child(state.matchId).child(qKey).on("value", snap=>{
-      currentResult = snap.val() || null;
-      render();
-    });
-  }
 
-  // استمع لإجابات الفرق لصوت الجرس (كل إجابة جديدة)
-  function attachSubsListener(){
-    lastSubKeys = new Set();
-    if(!state.matchId || state.qIndex==null || state.qIndex<0) return;
-    const qKey = String(state.qIndex);
-    subsRef.child(state.matchId).child(qKey).off();
-    subsRef.child(state.matchId).child(qKey).on("value", snap=>{
-      const v = snap.val() || {};
-      const keys = Object.keys(v);
-      // إذا جاء مفتاح جديد => جرس
-      keys.forEach(k=>{
-        if(!lastSubKeys.has(k)){
-          lastSubKeys.add(k);
-          ding();
-        }
-      });
-    });
-  }
+}
 
-  // عند تغيير السؤال أو المباراة، نعيد ربط المستمعات ونمسح التلوين
-  stateRef.on("value", s=>{
-    state=s.val()||{};
-    clearHighlights();
-    attachResultListener();
-    attachSubsListener();
-    render();
-  });
+teamsRef.on("value",s=>{
+teams=s.val()||{};
+renderTeams();
+});
 
+matchesRef.on("value",s=>{
+matches=s.val()||{};
+renderMatch();
+});
 
-  setInterval(()=>{ if(state.phase==="live") render(); }, 250);
+stateRef.on("value",s=>{
+
+state=s.val()||{};
+
+document.getElementById("qNum").textContent=
+state.qIndex>=0?"سؤال "+(state.qIndex+1):"سؤال —";
+
+renderMatch();
+renderQuestion();
+renderTeams();
+renderAudience();
+listenBell();
+
+});
+
+setInterval(renderTimer,500);
+
 })();
 </script>
-<audio id="bellSound" src="bell.wav" preload="auto"></audio></body>
+
 <div class="designer-badge">
-  <a href="https://www.instagram.com/_1c29/" target="_blank">
-    <span>تصميم وبرمجة: <strong>علي العجمي</strong></span>
-    <svg viewBox="0 0 24 24" fill="currentColor">
-      <path d="M7.75 2C4.57 2 2 4.57 2 7.75v8.5C2 19.43 4.57 22 7.75 22h8.5C19.43 22 22 19.43 22 16.25v-8.5C22 4.57 19.43 2 16.25 2h-8.5zm0 2h8.5C18.01 4 20 5.99 20 7.75v8.5c0 1.76-1.99 3.75-3.75 3.75h-8.5C5.99 20 4 18.01 4 16.25v-8.5C4 5.99 5.99 4 7.75 4zm4.25 2.75A5.25 5.25 0 1 0 17.25 12 5.26 5.26 0 0 0 12 6.75zm0 2A3.25 3.25 0 1 1 8.75 12 3.25 3.25 0 0 1 12 8.75zm4.5-3.25a1.25 1.25 0 1 0 1.25 1.25A1.25 1.25 0 0 0 16.5 5.5z"/>
-    </svg>
-  </a>
-</div></body>
+<a href="https://www.instagram.com/_1c29/" target="_blank">
+تصميم وبرمجة: <strong>عَلي بن حيدر🤎</strong></a>
+</div>
+
+</body>
 </html>
