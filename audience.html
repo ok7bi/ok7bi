@@ -76,10 +76,8 @@ if(!initFirebaseOrShowError()) return;
 const PATH = "contest_v1/audience";
 const usersRef = ref(PATH + "/users");
 const answersRef = ref(PATH + "/answers");
+const awardedRef = ref(PATH + "/awarded"); // سجل منع التكرار
 const stateRef = ref("contest_v1/state");
-/* =========================
-   احتساب نقاط الجمهور
-========================= */
 
 const resultsRef = ref("contest_v1/matchResults");
 
@@ -107,15 +105,32 @@ if(!ansSnap.exists()) return;
 
 const answers = ansSnap.val();
 
-Object.keys(answers).forEach(username=>{
+Object.keys(answers).forEach(async username=>{
 
-if(answers[username] === correctLetter){
+if(answers[username] !== correctLetter) return;
 
-usersRef.child(username).child("score")
+// تحقق هل أخذ النقطة سابقاً
+const already = await awardedRef
+.child(matchId)
+.child(qIndex)
+.child(username)
+.get();
+
+if(already.exists()) return;
+
+// سجل أنه أخذ النقطة
+await awardedRef
+.child(matchId)
+.child(qIndex)
+.child(username)
+.set(true);
+
+// أعط النقطة
+usersRef
+.child(username)
+.child("score")
 .transaction(current => (current || 0) + 1);
 
-}
-
 });
 
 });
@@ -125,6 +140,7 @@ usersRef.child(username).child("score")
 });
 
 });
+
 let currentMatch = null;
 let currentQuestion = null;
 let answered = false;
