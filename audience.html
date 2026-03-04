@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مسابقة الجمهور</title>
+<link rel="stylesheet" href="style.css"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+</head>
+
+<body>
+<div class="container">
+
+<!-- القوانين -->
+<div class="card" id="rulesCard">
+<h2>📜 قوانين مسابقة الجمهور</h2>
+<ul style="line-height:2">
+<li>❌ يمنع استخدام Google أو أي وسيلة بحث</li>
+<li>❌ يمنع مساعدة الفرق أو مشاركة الإجابات</li>
+<li>❌ يمنع إنشاء أكثر من حساب</li>
+<li>⚠️ أي مخالفة تلغي المشاركة فورًا</li>
+</ul>
+<button id="acceptBtn">أوافق على الشروط</button>
+</div>
+
+<!-- تسجيل الدخول -->
+<div class="card" id="authCard" style="display:none">
+<h2>👤 تسجيل / دخول</h2>
+<input id="username" placeholder="اسم المستخدم" />
+<input id="password" type="password" placeholder="كلمة المرور" />
+
+<div style="margin-top:15px;">
+<button id="registerBtn">إنشاء حساب</button>
+<button id="loginBtn">تسجيل دخول</button>
+</div>
+
+<p id="authMsg" style="margin-top:10px;color:red;"></p>
+</div>
+
+<!-- صفحة اللعب -->
+<div class="card" id="gameCard" style="display:none">
+<h2>🎯 مسابقة الجمهور</h2>
+
+<div id="gameArea" style="display:none">
+
+<div style="font-size:20px;margin-bottom:10px;">
+سؤال <span id="audQNum">—</span>
+</div>
+
+<div style="font-size:40px;margin-bottom:15px;" id="audTimer">—</div>
+
+<div id="audAnswers" style="display:flex;gap:10px;justify-content:center;">
+<button data-letter="A" class="answerBtn">A</button>
+<button data-letter="B" class="answerBtn">B</button>
+<button data-letter="C" class="answerBtn">C</button>
+<button data-letter="D" class="answerBtn">D</button>
+</div>
+
+<p id="audMsg" style="margin-top:15px;"></p>
+
+</div>
+
+<p id="waitingMsg">انتظر بدء السؤال...</p>
+</div>
+
+</div>
+
+<script>
+(function(){
+
+if(!initFirebaseOrShowError()) return;
+
+const PATH = "contest_v1/audience";
+const usersRef = ref(PATH + "/users");
+const answersRef = ref(PATH + "/answers");
+const stateRef = ref("contest_v1/state");
+/* =========================
+   احتساب نقاط الجمهور
+========================= */
+
+const resultsRef = ref("contest_v1/matchResults");
+
+resultsRef.on("value", snap=>{
+
+const results = snap.val();
+if(!results) return;
+
+Object.keys(results).forEach(matchId=>{
+
+Object.keys(results[matchId]).forEach(qIndex=>{
+
+const correctIndex = results[matchId][qIndex].correctIndex;
+if(correctIndex == null) return;
+
+const correctLetter = ["A","B","C","D"][correctIndex];
+
+answersRef
+.child(matchId)
+.child(qIndex)
+.once("value")
+.then(ansSnap=>{
+
+if(!ansSnap.exists()) return;
+
+const answers = ansSnap.val();
+
+Object.keys(answers).forEach(username=>{
+
+if(answers[username] === correctLetter){
+
+usersRef.child(username).child("score")
+.transaction(current => (current || 0) + 1);
+
+}
+
+});
+
+});
+
+});
+
+});
+
+});
+let currentMatch = null;
+let currentQuestion = null;
+let answered = false;
+let timerInterval = null;
+let currentUser = null;
+
+/* =========================
+   الشروط
+========================= */
+document.getElementById("acceptBtn").addEventListener("click", function(){
+document.getElementById("rulesCard").style.display="none";
+document.getElementById("authCard").style.display="block";
+});
+
+/* =========================
+   تسجيل
+========================= */
+document.getElementById("registerBtn").addEventListener("click", function(){
+
+const u = document.getElementById("username").value.trim();
+const p = document.getElementById("password").value.trim();
+const msg = document.getElementById("authMsg");
+
+if(!u || !p){
+msg.textContent="يرجى تعبئة جميع الحقول";
+return;
+}
+
+usersRef.child(u).once("value").then(snap=>{
+if(snap.exists()){
+msg.textContent="اسم المستخدم موجود مسبقاً";
+}else{
+usersRef.child(u).set({
+password: btoa(p),
+score: 0
+});
+msg.style.color="green";
+msg.textContent="تم إنشاء الحساب. سجل دخول الآن.";
+}
+});
+
+});
+
+/* =========================
+   دخول
+========================= */
+document.getElementById("loginBtn").addEventListener("click", function(){
+
+const u = document.getElementById("username").value.trim();
+const p = document.getElementById("password").value.trim();
+const msg = document.getElementById("authMsg");
+
+usersRef.child(u).once("value").then(snap=>{
+if(!snap.exists()){
+msg.textContent="المستخدم غير موجود";
+return;
+}
+
+const data = snap.val();
+
+if(data.password !== btoa(p)){
+msg.textContent="كلمة المرور غير صحيحة";
+return;
+}
+
+currentUser = u;
+
+document.getElementById("authCard").style.display="none";
+document.getElementById("gameCard").style.display="block";
+msg.textContent="";
+});
+
+});
+
+/* =========================
+   متابعة حالة السؤال
+========================= */
+stateRef.on("value", snap=>{
+
+const state = snap.val() || {};
+
+if(!currentUser) return;
+
+if(!state.matchId || state.qIndex == null || state.qIndex < 0){
+
+document.getElementById("gameArea").style.display="none";
+document.getElementById("waitingMsg").style.display="block";
+return;
+}
+
+currentMatch = state.matchId;
+currentQuestion = String(state.qIndex);
+
+document.getElementById("gameArea").style.display="block";
+document.getElementById("waitingMsg").style.display="none";
+document.getElementById("audQNum").textContent = state.qIndex + 1;
+
+answered = false;
+enableButtons();
+document.getElementById("audMsg").textContent="";
+
+/* ===== عداد ===== */
+
+if(timerInterval) clearInterval(timerInterval);
+
+if(state.timerEnd){
+
+timerInterval = setInterval(()=>{
+
+const left = Math.max(0, Math.ceil((state.timerEnd - Date.now())/1000));
+document.getElementById("audTimer").textContent = left;
+
+if(left <= 0){
+clearInterval(timerInterval);
+disableButtons();
+}
+
+},1000);
+
+}else{
+document.getElementById("audTimer").textContent="—";
+}
+
+});
+
+/* =========================
+   اختيار إجابة
+========================= */
+document.querySelectorAll("#audAnswers button").forEach(btn=>{
+btn.addEventListener("click", function(){
+
+if(answered) return;
+if(!currentUser) return;
+
+const letter = this.dataset.letter;
+
+answersRef
+.child(currentMatch)
+.child(currentQuestion)
+.child(currentUser)
+.set(letter);
+
+answered = true;
+disableButtons();
+document.getElementById("audMsg").textContent="تم تسجيل إجابتك ✔";
+
+});
+});
+
+/* =========================
+   أدوات
+========================= */
+function disableButtons(){
+document.querySelectorAll("#audAnswers button").forEach(b=>b.disabled=true);
+}
+
+function enableButtons(){
+document.querySelectorAll("#audAnswers button").forEach(b=>b.disabled=false);
+}
+
+})();
+</script>
+<div class="designer-badge">
+<a href="https://www.instagram.com/_1c29/" target="_blank">
+تصميم وبرمجة: <strong>عَلي بن حيدر🤎</strong>
+</a>
+</div>
+</body>
+</html>
