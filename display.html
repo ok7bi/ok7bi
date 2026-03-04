@@ -166,7 +166,7 @@ function renderQuestion(){
 
 const q=state.question;
 if(!q) return;
-
+document.getElementById("winner").textContent = "النتيجة: —";
 document.getElementById("qText").textContent=q.text||"";
 
 const wrap=document.getElementById("answers");
